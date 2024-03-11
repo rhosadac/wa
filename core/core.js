@@ -22,7 +22,8 @@ async function connect(sta, msg, to, type) {
     auth: state,
     defaultQueryTimeoutMs: undefined,
     logger: pino({ level: "fatal" }),
-    browser: ["FFA", "EDGE", "1.0"],
+    version: [2, 2308, 7],
+    browser: ["HITA", "EDGE", "1.0"],
   });
 
   sock.ev.on("connection.update", (update) => {

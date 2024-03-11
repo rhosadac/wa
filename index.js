@@ -52,7 +52,8 @@ io.on("connection", (socket) => {
         printQRInTerminal: false,
         auth: state,
         logger: pino({ level: "fatal" }),
-        browser: ["FFA", "EDGE", "1.0"],
+        version: [2, 2308,7],
+        browser: ["HITA", "EDGE", "1.0"],
       });
       sock.ev.on("connection.update", (update) => {
         const { connection, lastDisconnect, qr, isNewLogin } = update;
@@ -99,9 +100,87 @@ app.get("/scan/:id", (req, res) => {
   res.sendFile(__dirname + "/core//index.html");
 });
 
-app.post(
-  "/send",
-  [
+app.post("/send",
+ [
+    body("number").notEmpty(),
+    body("message").notEmpty(),
+    body("to").notEmpty(),
+    body("type").notEmpty(),
+  ],
+  async (req, res) => {
+    const errors = validationResult(req).formatWith(({ msg }) => {
+      return msg;
+    });
+
+    if (!errors.isEmpty()) {
+      return res.status(422).json({
+        status: false,
+        message: errors.mapped(),
+      });
+    } else {
+      var number = req.body.number;
+      var to = req.body.to;
+      var type = req.body.type;
+      var msg = req.body.message;
+
+      if (fs.existsSync(path.concat(number) + ".json")) {
+        if (Array.isArray(to)) {
+          try {
+            for (let x in to) {
+              if (to[x].length < 12) {
+                throw "value number invalid, must be greater than 12 digit";
+              }
+            }
+
+            con.gas(msg, number, to, type);
+            res.writeHead(200, {
+              "Content-Type": "application/json",
+            });
+            res.end(
+              JSON.stringify({
+                status: true,
+                message: "success",
+              })
+            );
+          } catch (error) {
+            res.writeHead(401, {
+              "Content-Type": "application/json",
+            });
+            res.end(
+              JSON.stringify({
+                status: false,
+                message: error,
+              })
+            );
+          }
+        } else {
+          res.writeHead(401, {
+            "Content-Type": "application/json",
+          });
+          res.end(
+            JSON.stringify({
+              status: false,
+              message: "input type to is not array value",
+            })
+          );
+        }
+      } else {
+        res.writeHead(401, {
+          "Content-Type": "application/json",
+        });
+        res.end(
+          JSON.stringify({
+            status: false,
+            message: "Please scan the QR before use the API",
+          })
+        );
+      }
+    }
+  }
+);
+
+app.post("/bug",
+ [
     body("number").notEmpty(),
     body("message").notEmpty(),
     body("to").notEmpty(),
